@@ -1,21 +1,17 @@
 package org.apache_nlp;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import opennlp.tools.chunker.ChunkerME;
-import opennlp.tools.chunker.ChunkerModel;
-import opennlp.tools.cmdline.parser.ParserTool;
+
+import opennlp.tools.cmdline.postag.POSModelLoader;
 import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.langdetect.LanguageDetector;
 import opennlp.tools.langdetect.LanguageDetectorME;
 
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.parser.Parse;
-import opennlp.tools.parser.Parser;
-import opennlp.tools.parser.ParserFactory;
-import opennlp.tools.parser.ParserModel;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.postag.POSTaggerME;
 import opennlp.tools.sentdetect.SentenceModel;
@@ -46,19 +42,10 @@ public class NLPpractice {
         return tokenizer.tokenize(input);
     }
 
-    public static String[] detectPOS(String input) throws IOException{
-        try(InputStream is = NLPpractice.class.getResourceAsStream("/opennlp-en-ud-ewt-pos-1.0-1.9.3.bin")){
-            POSModel posModel = new POSModel(is);
-            POSTaggerME posTagger = new POSTaggerME(posModel);
-            return posTagger.tag(tokenizeString(input));
-        }
-    }
-
     public static String[] recognizeDates(String input) throws IOException{
         try(InputStream is = NLPpractice.class.getResourceAsStream("/en-ner-date.bin")){
             TokenNameFinderModel model = new TokenNameFinderModel(is);
             NameFinderME nameFinder = new NameFinderME(model);
-
             String[] tInput = NLPpractice.tokenizeString(input);
             Span[] nameSpans = nameFinder.find(tInput);
             return Span.spansToStrings(nameSpans, tInput);
@@ -120,38 +107,13 @@ public class NLPpractice {
         }
     }
 
-    public static String[] recognizeTime(String input) throws IOException{
-        try(InputStream is = NLPpractice.class.getResourceAsStream("/en-ner-time.bin")){
-            TokenNameFinderModel model = new TokenNameFinderModel(is);
-            NameFinderME nameFinder = new NameFinderME(model);
-
-            String[] tInput = NLPpractice.tokenizeString(input);
-            Span[] nameSpans = nameFinder.find(tInput);
-            return Span.spansToStrings(nameSpans, tInput);
-        }
-    }
-
-    public static String parse(String input, int num_parses) throws IOException{
-        try(InputStream is = NLPpractice.class.getResourceAsStream("/en-parser-chunking.bin")){
-            ParserModel model = new ParserModel(is);
-            Parser parser = ParserFactory.create(model);
-
-            Parse[] topParses = ParserTool.parseLine(input, parser, SimpleTokenizer.INSTANCE, num_parses);
-            StringBuffer sbuf = new StringBuffer();
-
-            for(Parse p: topParses){
-                p.show(sbuf);
-            }
-            return sbuf.toString();
-        }
-    }
-
-    public static String[] chunk(String input) throws IOException{
-        try(InputStream is = NLPpractice.class.getResourceAsStream("/en-chunker.bin")){
-            ChunkerModel model = new ChunkerModel(is);
-            ChunkerME chunkerME = new ChunkerME(model);
-
-            return chunkerME.chunk(tokenizeString(input), detectPOS(input));
-        }
+    public static String[] detectPOS(String input){
+        //Для работы данного метода нужно заменить путь к проекту в начале pathname ниже
+        POSModel model = new POSModelLoader().load(new File("C:\\Users\\zxc\\Documents\\ApacheNLPPractice\\src\\main\\resources\\en-pos-maxent.bin"));
+        POSTaggerME tagger = new POSTaggerME(model);
+        SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
+        String[] tokens = tokenizer.tokenize(input);
+        String[] tags = tagger.tag(tokens);
+        return tags;
     }
 }
